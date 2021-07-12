@@ -1,4 +1,9 @@
-console.log('Hello, world!')
+import React from 'react'
+import { hydrate } from 'react-dom'
+import { loadableReady } from '@loadable/component'
+import App from './App'
 
-console.log(process.env.USER)
-console.log(process.env.NODE_ENV)
+loadableReady(() => {
+  const root = document.getElementById('app')
+  hydrate(<App />, root)
+})
