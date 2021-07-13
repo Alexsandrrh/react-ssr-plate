@@ -16,8 +16,8 @@ router.get('/ping', (ctx) => {
 
 // SSR route
 router.get('(.*)', (ctx) => {
-	// Set HTML
-	ctx.type = 'html'
+  // Set HTML
+  ctx.type = 'html'
 
   const html = renderToString(<HTML App={App} />)
   ctx.body = html
@@ -26,7 +26,11 @@ router.get('(.*)', (ctx) => {
 const app = new Koa()
 
 app
-  .use(helmet())
+  .use(
+    helmet({
+      contentSecurityPolicy: false
+    })
+  )
   .use(serve(process.env.PUBLIC_DIR))
   .use(router.routes())
   .use(router.allowedMethods())

@@ -1,24 +1,26 @@
-const path = require('path')
-const rimraf = require('rimraf')
-const { webpack } = require('webpack')
-const createWebpackConfig = require('../config/createWebpackConfig')
+const deleteBuildDir = require('../config/utils/deleteBuildDir')
+
+const createWebpackConfig = require('../config/createAsyncConfig')
+const compiler = require('../config/utils/compiler')
 
 const script = async () => {
-  // Clear console
-  console.log()
+  try {
+    // Clear console
+    console.log()
 
-  // Delete dist dir
-  rimraf(path.resolve('dist'), {}, (err) => {})
+    // Delete dist dir
+    await deleteBuildDir()
 
-  // Create configs
-  const clientConfig = await createWebpackConfig('client', 'production')
-  const serverConfig = await createWebpackConfig('server', 'production')
+    // Create configs
+    const clientConfig = await createWebpackConfig('client', 'production')
+    const serverConfig = await createWebpackConfig('server', 'production')
 
-  // Build apps
-  webpack(clientConfig).run()
-  webpack(serverConfig).run((err, stats) => {
-  	console.log(err)
-	})
+    // Build apps
+    await compiler(clientConfig)
+    await compiler(serverConfig)
+  } catch (e) {
+    console.log(e)
+  }
 }
 
-script().then(() => console.log('Build success!!!'))
+script()

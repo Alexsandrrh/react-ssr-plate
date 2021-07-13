@@ -1,10 +1,11 @@
 require('dotenv')
 const path = require('path')
-const { DefinePlugin } = require('webpack')
+const { DefinePlugin, HotModuleReplacementPlugin } = require('webpack')
 const WebpackBar = require('webpackbar')
 const CopyPlugin = require('copy-webpack-plugin')
 const nodeExternals = require('webpack-node-externals')
 const LoadablePlugin = require('@loadable/webpack-plugin')
+const StartServerPlugin = require('start-server-webpack-plugin')
 
 const paths = {
   buildDir: path.resolve('dist'),
@@ -37,16 +38,17 @@ function createDefines(base) {
 
 /**
  *
- * @name createWebpackConfig
+ * @name createAsyncConfig
  * @param {("client" | "server")} target
  * @param {("development"|"production")} env
  * @return {Object}
  * */
-async function createWebpackConfig(target, env) {
+async function createAsyncConfig(target, env) {
   const isClient = target === 'client'
   const isServer = target === 'server'
   const isDev = env === 'development'
   const isProd = env === 'production'
+  const clientPublicPath = isDev ? process.env.PUBLIC_PATH : '/'
 
   const config = {
     mode: env,
@@ -83,28 +85,71 @@ async function createWebpackConfig(target, env) {
   }
 
   if (isClient) {
+    // Client entry
     config.entry = { bundle: [paths.clientEntry] }
+
+    // Common client output
     config.output = {
       path: paths.publicBuildDir,
-      filename: 'assets/js/[name].js',
-      chunkFilename: 'assets/js/[name].chunk.js'
+      publicPath: clientPublicPath
     }
 
-    config.plugins.push(
+    // Common client plugins
+    config.plugins = [
+      ...config.plugins,
       new LoadablePlugin({
         filename: '../loadable-stats.json',
         outputAsset: path.resolve('dist'),
         writeToDisk: true,
         chunkLoadingGlobal: '__CHUNKS_GLOBAL__'
       })
-    )
+    ]
+
+    if (isDev) {
+      // Output
+      config.output = {
+        ...config.output,
+        filename: 'assets/js/[name].js',
+        chunkFilename: 'assets/js/[name].chunk.js'
+      }
+
+      // Dev Server
+      config.devServer = {
+        disableHostCheck: true,
+        clientLogLevel: 'none', // Enable gzip compression of generated files.
+        compress: true, // watchContentBase: true,
+        headers: {
+          'Access-Control-Allow-Origin': '*',
+          'Content-Security-Policy': "script-src 'self'"
+        },
+        historyApiFallback: {
+          // Paths with dots should still use the history fallback.
+          // See https://github.com/facebookincubator/create-react-app/issues/387.
+          disableDotRule: true
+        },
+        publicPath: clientPublicPath,
+        hot: true,
+        noInfo: true,
+        overlay: false,
+        quiet: true, // By default files from `contentBase` will not trigger a page reload.
+        // Reportedly, this avoids CPU overload on some systems.
+        // https://github.com/facebookincubator/create-react-app/issues/293
+        watchOptions: { ignored: /node_modules/ }
+      }
+
+      config.plugins = [
+        ...config.plugins,
+        new HotModuleReplacementPlugin({
+          multiStep: true
+        })
+      ]
+    }
 
     if (isProd) {
       config.output = {
         ...config.output,
         filename: 'assets/js/[name].[contenthash].js',
-        chunkFilename: 'assets/js/[name].[contenthash].chunk.js',
-        publicPath: '/'
+        chunkFilename: 'assets/js/[name].[contenthash].chunk.js'
       }
     }
   }
@@ -118,7 +163,7 @@ async function createWebpackConfig(target, env) {
     config.entry = [paths.serverEntry]
     config.output = {
       path: paths.buildDir,
-      filename: '[name].js',
+      filename: 'server.js',
       chunkFilename: '[name].chunk.js',
       library: 'commonjs2'
     }
@@ -136,9 +181,15 @@ async function createWebpackConfig(target, env) {
         ]
       })
     )
+
+    if (isDev) {
+      config.watch = true
+
+      config.plugins = [...config.plugins, new HotModuleReplacementPlugin()]
+    }
   }
 
   return config
 }
 
-module.exports = createWebpackConfig
+module.exports = createAsyncConfig

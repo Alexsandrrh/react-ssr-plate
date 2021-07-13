@@ -1,15 +1,38 @@
-const { webpack } = require("webpack");
-const createWebpackConfig = require("../config/createWebpackConfig");
+const { choosePort } = require('react-dev-utils/WebpackDevServerUtils')
+const createWebpackConfig = require('../config/createAsyncConfig')
+const DevServer = require('webpack-dev-server')
+const compiler = require('../config/utils/compiler')
+const deleteBuildDir = require('../config/utils/deleteBuildDir')
 
-const script = () => {
-	// Clear console
-	console.log();
+const script = async () => {
+  // Clear console
+  console.log()
 
-	const clientConfig = createWebpackConfig("client", "development");
-	const serverConfig = createWebpackConfig("server", "development");
+  // Remove last build dir
+  await deleteBuildDir()
 
-	webpack(clientConfig).run();
-	webpack(serverConfig).run();
-};
+  // Find free port
+  const PORT = await choosePort('localhost', 3000)
 
-script();
+  // Set publicPath
+  process.env.PUBLIC_PATH = `http://localhost:${PORT}/`
+
+  // Configs
+  const clientConfig = await createWebpackConfig('client', 'development')
+  const serverConfig = await createWebpackConfig('server', 'development')
+
+  // Compilers
+  const clientCompiler = compiler(clientConfig)
+  const serverCompiler = compiler(serverConfig)
+
+  // Initiate dev server
+  const devServer = new DevServer(clientCompiler)
+
+  devServer.listen(PORT, () => {
+    console.log('Starting dev server)')
+  })
+
+  serverCompiler.watch({ stats: 'none' }, () => {})
+}
+
+script()
