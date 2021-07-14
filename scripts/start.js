@@ -12,10 +12,12 @@ const script = async () => {
   await deleteBuildDir()
 
   // Find free port
-  const PORT = await choosePort('localhost', 3000)
+  const PORT = await choosePort('localhost', process.env.DEV_PORT ?? 4040)
 
-  // Set publicPath
-  process.env.PUBLIC_PATH = `http://localhost:${PORT}/`
+  // Set envs
+  process.env.DEV_PORT = PORT.toString()
+  process.env.DEV_HOST = 'localhost'
+  process.env.PUBLIC_PATH = `http://${process.env.DEV_HOST}:${PORT}/`
 
   // Configs
   const clientConfig = await createWebpackConfig('client', 'development')

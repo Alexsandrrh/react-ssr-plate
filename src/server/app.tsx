@@ -1,4 +1,4 @@
-import Koa from 'koa'
+import Koa, {Context} from 'koa'
 import Router from 'koa-router'
 import helmet from 'koa-helmet'
 import serve from 'koa-static'
@@ -15,7 +15,7 @@ router.get('/ping', (ctx) => {
 })
 
 // SSR route
-router.get('(.*)', (ctx) => {
+router.get('(.*)', (ctx: Context) => {
   // Set HTML
   ctx.type = 'html'
 

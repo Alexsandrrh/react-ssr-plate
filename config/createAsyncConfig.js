@@ -5,7 +5,7 @@ const WebpackBar = require('webpackbar')
 const CopyPlugin = require('copy-webpack-plugin')
 const nodeExternals = require('webpack-node-externals')
 const LoadablePlugin = require('@loadable/webpack-plugin')
-const StartServerPlugin = require('start-server-webpack-plugin')
+const { RunScriptWebpackPlugin } = require('run-script-webpack-plugin')
 
 const paths = {
   buildDir: path.resolve('dist'),
@@ -119,8 +119,7 @@ async function createAsyncConfig(target, env) {
         clientLogLevel: 'none', // Enable gzip compression of generated files.
         compress: true, // watchContentBase: true,
         headers: {
-          'Access-Control-Allow-Origin': '*',
-          'Content-Security-Policy': "script-src 'self'"
+          'Access-Control-Allow-Origin': '*'
         },
         historyApiFallback: {
           // Paths with dots should still use the history fallback.
@@ -129,6 +128,8 @@ async function createAsyncConfig(target, env) {
         },
         publicPath: clientPublicPath,
         hot: true,
+        host: process.env.DEV_HOST,
+        port: process.env.DEV_PORT,
         noInfo: true,
         overlay: false,
         quiet: true, // By default files from `contentBase` will not trigger a page reload.
@@ -183,9 +184,19 @@ async function createAsyncConfig(target, env) {
     )
 
     if (isDev) {
+      // Entry
+      config.entry = ['webpack/hot/poll?300', ...config.entry]
+
       config.watch = true
 
-      config.plugins = [...config.plugins, new HotModuleReplacementPlugin()]
+      config.plugins = [
+        ...config.plugins,
+        new HotModuleReplacementPlugin(),
+        new RunScriptWebpackPlugin({
+          name: 'server.js',
+          nodeArgs: ['--inspect']
+        })
+      ]
     }
   }
 
