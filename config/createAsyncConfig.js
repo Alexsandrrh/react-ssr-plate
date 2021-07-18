@@ -6,6 +6,7 @@ const CopyPlugin = require('copy-webpack-plugin')
 const nodeExternals = require('webpack-node-externals')
 const LoadablePlugin = require('@loadable/webpack-plugin')
 const { RunScriptWebpackPlugin } = require('run-script-webpack-plugin')
+const errorOverlayMiddleware = require('react-dev-utils/errorOverlayMiddleware')
 
 const paths = {
   buildDir: path.resolve('dist'),
@@ -115,27 +116,24 @@ async function createAsyncConfig(target, env) {
 
       // Dev Server
       config.devServer = {
+        stats: 'errors-only',
         disableHostCheck: true,
-        clientLogLevel: 'none', // Enable gzip compression of generated files.
-        compress: true, // watchContentBase: true,
+        clientLogLevel: 'none',
+        compress: true,
         headers: {
           'Access-Control-Allow-Origin': '*'
         },
         historyApiFallback: {
-          // Paths with dots should still use the history fallback.
-          // See https://github.com/facebookincubator/create-react-app/issues/387.
           disableDotRule: true
         },
         publicPath: clientPublicPath,
         hot: true,
         host: process.env.DEV_HOST,
         port: process.env.DEV_PORT,
-        noInfo: true,
-        overlay: false,
-        quiet: true, // By default files from `contentBase` will not trigger a page reload.
-        // Reportedly, this avoids CPU overload on some systems.
-        // https://github.com/facebookincubator/create-react-app/issues/293
-        watchOptions: { ignored: /node_modules/ }
+        watchOptions: { ignored: /node_modules/ },
+        before(app) {
+          app.use(errorOverlayMiddleware())
+        }
       }
 
       config.plugins = [

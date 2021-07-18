@@ -28,7 +28,7 @@ const script = async () => {
   const serverCompiler = compiler(serverConfig)
 
   // Initiate dev server
-  const devServer = new DevServer(clientCompiler)
+  const devServer = new DevServer(clientCompiler, clientConfig.devServer)
 
   devServer.listen(PORT, () => {
     console.log('Starting dev server)')
