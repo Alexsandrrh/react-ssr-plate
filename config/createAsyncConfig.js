@@ -114,6 +114,33 @@ async function createAsyncConfig(target, env) {
         chunkFilename: 'assets/js/[name].chunk.js'
       }
 
+      // Rules
+      config.module.rules = [
+        ...config.module.rules,
+        {
+          test: /\.css$/,
+          exclude: /(node_modules|bower_components)/,
+          use: ['style-loader', 'css-loader']
+        },
+        {
+          test: /\.module.css$/,
+          exclude: /(node_modules|bower_components)/,
+          use: [
+            'style-loader',
+            {
+              loader: 'css-loader',
+              options: {
+                modules: {
+                  localIdentName: '[name]_[local]_[hash:base64:10]'
+                },
+                importLoaders: 2,
+                sourceMap: false
+              }
+            }
+          ]
+        }
+      ]
+
       // Dev Server
       config.devServer = {
         stats: 'errors-only',
@@ -136,6 +163,7 @@ async function createAsyncConfig(target, env) {
         }
       }
 
+      // Plugins
       config.plugins = [
         ...config.plugins,
         new HotModuleReplacementPlugin({
@@ -169,6 +197,15 @@ async function createAsyncConfig(target, env) {
     config.externals = nodeExternals({
       allowlist: [/\.(?!(?:jsx?|json)$).{1,5}$/i, 'webpack/hot/poll?300']
     })
+
+    config.module.rules = [
+      ...config.module.rules,
+      {
+        test: /\.css$/,
+        exclude: /(node_modules|bower_components)/,
+        loader: 'null-loader'
+      }
+    ]
 
     config.plugins.push(
       new CopyPlugin({

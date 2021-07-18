@@ -1,10 +1,36 @@
 {
   "compilerOptions": {
+    "plugins": [{ "name": "typescript-plugin-css-modules" }],
+    "allowJs": true,
+    "allowUnreachableCode": false,
+    "noFallthroughCasesInSwitch": true,
+    "allowSyntheticDefaultImports": true,
+    "downlevelIteration": true,
+    "esModuleInterop": true,
+    "resolveJsonModule": true,
+    "forceConsistentCasingInFileNames": true,
+    "jsx": "react-jsx",
+    "lib": ["es6", "es2015", "esnext", "dom"],
     "module": "commonjs",
-    "target": "es5",
+    "moduleResolution": "Node",
+    "noImplicitAny": true,
+    "noImplicitReturns": true,
+    "noImplicitThis": true,
+    "noUnusedLocals": false,
     "sourceMap": true,
-		"esModuleInterop": true,
-		"jsx": "react-jsx"
-	},
-	"exclude": ["node_modules"]
+    "strictNullChecks": true,
+    "strict": false,
+    "pretty": true,
+    "suppressImplicitAnyIndexErrors": true,
+    "target": "es6"
+  },
+  "exclude": [
+    "node_modules",
+    "build",
+    "scripts",
+    "acceptance-tests",
+    "webpack",
+    "jest"
+  ],
+  "types": ["typePatches", "node", "./src/declarations.d.ts"]
 }
