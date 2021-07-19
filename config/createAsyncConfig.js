@@ -7,6 +7,7 @@ const nodeExternals = require('webpack-node-externals')
 const LoadablePlugin = require('@loadable/webpack-plugin')
 const { RunScriptWebpackPlugin } = require('run-script-webpack-plugin')
 const errorOverlayMiddleware = require('react-dev-utils/errorOverlayMiddleware')
+const MiniCssExtractPlugin = require('mini-css-extract-plugin')
 
 const paths = {
   buildDir: path.resolve('dist'),
@@ -65,6 +66,10 @@ async function createAsyncConfig(target, env) {
           test: /\.(js|jsx|ts|tsx)$/,
           exclude: /(node_modules|bower_components)/,
           loader: 'babel-loader'
+        },
+        {
+          test: /\.svg$/,
+          use: ['svg-sprite-loader', 'svgo-loader']
         }
       ]
     },
@@ -101,8 +106,7 @@ async function createAsyncConfig(target, env) {
       new LoadablePlugin({
         filename: '../loadable-stats.json',
         outputAsset: path.resolve('dist'),
-        writeToDisk: true,
-        chunkLoadingGlobal: '__CHUNKS_GLOBAL__'
+        writeToDisk: true
       })
     ]
 
@@ -120,21 +124,17 @@ async function createAsyncConfig(target, env) {
         {
           test: /\.css$/,
           exclude: /(node_modules|bower_components)/,
-          use: ['style-loader', 'css-loader']
-        },
-        {
-          test: /\.module.css$/,
-          exclude: /(node_modules|bower_components)/,
           use: [
             'style-loader',
             {
               loader: 'css-loader',
               options: {
                 modules: {
-                  localIdentName: '[name]_[local]_[hash:base64:10]'
+                  auto: true,
+                  localIdentName: '[name]__[local]__[hash:base64:6]'
                 },
-                importLoaders: 2,
-                sourceMap: false
+                importLoaders: 1,
+                sourceMap: true
               }
             }
           ]
@@ -173,11 +173,44 @@ async function createAsyncConfig(target, env) {
     }
 
     if (isProd) {
+      // Output
       config.output = {
         ...config.output,
         filename: 'assets/js/[name].[contenthash].js',
         chunkFilename: 'assets/js/[name].[contenthash].chunk.js'
       }
+
+      // Rules
+      config.module.rules = [
+        ...config.module.rules,
+        {
+          test: /\.css$/,
+          exclude: /(node_modules|bower_components)/,
+          use: [
+            MiniCssExtractPlugin.loader,
+            {
+              loader: 'css-loader',
+              options: {
+                modules: {
+                  auto: true,
+                  localIdentName: '[hash:base64:6]'
+                },
+                importLoaders: 1,
+                sourceMap: true
+              }
+            }
+          ]
+        }
+      ]
+
+      // Plugins
+      config.plugins = [
+        ...config.plugins,
+        new MiniCssExtractPlugin({
+          filename: 'assets/css/[name].[contenthash].css',
+          chunkFilename: 'assets/css/[id].[contenthash].css'
+        })
+      ]
     }
   }
 
@@ -198,14 +231,28 @@ async function createAsyncConfig(target, env) {
       allowlist: [/\.(?!(?:jsx?|json)$).{1,5}$/i, 'webpack/hot/poll?300']
     })
 
-    config.module.rules = [
-      ...config.module.rules,
-      {
-        test: /\.css$/,
-        exclude: /(node_modules|bower_components)/,
-        loader: 'null-loader'
-      }
-    ]
+    if (isProd) {
+      config.module.rules = [
+        ...config.module.rules,
+        {
+          test: /\.css$/,
+          exclude: /(node_modules|bower_components)/,
+          use: [
+            {
+              loader: 'css-loader',
+              options: {
+                modules: {
+                  auto: true,
+                  exportOnlyLocals: true,
+                  localIdentName: '[hash:base64:6]'
+                },
+                importLoaders: 1
+              }
+            }
+          ]
+        }
+      ]
+    }
 
     config.plugins.push(
       new CopyPlugin({
@@ -223,6 +270,27 @@ async function createAsyncConfig(target, env) {
       config.entry = ['webpack/hot/poll?300', ...config.entry]
 
       config.watch = true
+
+      config.module.rules = [
+        ...config.module.rules,
+        {
+          test: /\.css$/,
+          exclude: /(node_modules|bower_components)/,
+          use: [
+            {
+              loader: 'css-loader',
+              options: {
+                modules: {
+                  auto: true,
+                  exportOnlyLocals: true,
+                  localIdentName: '[name]__[local]__[hash:base64:6]'
+                },
+                importLoaders: 1
+              }
+            }
+          ]
+        }
+      ]
 
       config.plugins = [
         ...config.plugins,

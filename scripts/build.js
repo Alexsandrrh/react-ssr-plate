@@ -6,7 +6,7 @@ const compiler = require('../config/utils/compiler')
 const script = async () => {
   try {
     // Clear console
-    console.log()
+    console.clear()
 
     // Delete dist dir
     await deleteBuildDir()
@@ -16,8 +16,11 @@ const script = async () => {
     const serverConfig = await createWebpackConfig('server', 'production')
 
     // Build apps
-    await compiler(clientConfig)
-    await compiler(serverConfig)
+    const clientCompiler = await compiler(clientConfig)
+    const serverCompiler = await compiler(serverConfig)
+
+    clientCompiler.run()
+    serverCompiler.run()
   } catch (e) {
     console.log(e)
   }
