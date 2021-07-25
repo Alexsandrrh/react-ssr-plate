@@ -3,9 +3,11 @@ import path from 'path'
 import { ChunkExtractor } from '@loadable/server'
 import { Helmet } from 'react-helmet'
 import SvgSprite from './SvgSprite'
+import { Store } from '../client/store'
 
 interface Props {
   App: any
+  initialData: Store
 }
 
 // Loadable component
@@ -17,7 +19,7 @@ const helmet = Helmet.renderStatic()
 const htmlAttrs = helmet.htmlAttributes.toComponent()
 const bodyAttrs = helmet.bodyAttributes.toComponent()
 
-const HTML = ({ App }: Props) => {
+const HTML = ({ App, initialData }: Props) => {
   const jsx = extractor.collectChunks(<App />)
 
   return (
@@ -37,9 +39,15 @@ const HTML = ({ App }: Props) => {
       </head>
       <body {...bodyAttrs}>
         <SvgSprite />
-        <div id="app">{jsx}</div>
+        <div id="root">{jsx}</div>
         <div id="popup" />
-        <script id="__INITIAL_DATA__" type="application/json" />
+        <script
+          id="__INITIAL_DATA__"
+          type="application/json"
+          dangerouslySetInnerHTML={{
+            __html: JSON.stringify(initialData).replace(/</g, '\\u003c')
+          }}
+        />
         {extractor.getScriptElements()}
       </body>
     </html>

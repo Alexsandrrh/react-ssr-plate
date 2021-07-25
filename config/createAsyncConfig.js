@@ -1,5 +1,6 @@
 require('dotenv')
 const path = require('path')
+const setEnvs = require('./setEnvs')
 const { DefinePlugin, HotModuleReplacementPlugin } = require('webpack')
 const WebpackBar = require('webpackbar')
 const CopyPlugin = require('copy-webpack-plugin')
@@ -42,18 +43,18 @@ function createDefines(base) {
  *
  * @name createAsyncConfig
  * @param {("client" | "server")} target
- * @param {("development"|"production")} env
+ * @param {("development"|"production" | "test")} env
  * @return {Object}
  * */
-async function createAsyncConfig(target, env) {
-  const isClient = target === 'client'
-  const isServer = target === 'server'
-  const isDev = env === 'development'
-  const isProd = env === 'production'
-  const clientPublicPath = isDev ? process.env.PUBLIC_PATH : '/'
+async function createAsyncConfig(target, nodeEnv) {
+  // Set envs
+  const { isServer, isDev, isProd, isClient, clientPublicPath } = setEnvs(
+    target,
+    nodeEnv
+  )
 
   const config = {
-    mode: env,
+    mode: nodeEnv,
     name: target,
     stats: 'errors-only',
     target: isServer ? 'node' : 'web',
@@ -80,7 +81,7 @@ async function createAsyncConfig(target, env) {
       new DefinePlugin(
         createDefines({
           'process.env.PUBLIC_DIR': paths.publicBuildDir,
-          'process.env.NODE_ENV': env,
+          'process.env.NODE_ENV': nodeEnv,
           IS_DEV: isDev,
           IS_PROD: isProd,
           IS_SERVER: isServer,

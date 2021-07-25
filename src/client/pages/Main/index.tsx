@@ -3,7 +3,7 @@ import styles from './Main.module.css'
 import IconLayout from '../../assets/icons/layout.svg'
 import Icon from '../../components/commons/Icon'
 
-const Main = () => {
+const Page = () => {
   return (
     <div className={styles.Main}>
       <h2 className={styles.Heading}>Main, page!</h2>
@@ -36,4 +36,4 @@ const Main = () => {
   )
 }
 
-export default Main
+export default Page
