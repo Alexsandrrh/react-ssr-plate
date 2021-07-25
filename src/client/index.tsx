@@ -1,9 +1,10 @@
 import React from 'react'
 import { hydrate } from 'react-dom'
 import { loadableReady } from '@loadable/component'
-import App from './App'
 import createStore, { Store } from './store'
 import { Provider } from 'react-redux'
+import { BrowserRouter } from 'react-router-dom'
+import Routes from './pages'
 
 const initialData: Store = JSON.parse(
   document.getElementById('__INITIAL_DATA__')?.innerText ?? '{}'
@@ -15,7 +16,9 @@ loadableReady().then(() => {
   const root = document.getElementById('root')
   hydrate(
     <Provider store={store}>
-      <App />
+      <BrowserRouter>
+        <Routes />
+      </BrowserRouter>
     </Provider>,
     root
   )

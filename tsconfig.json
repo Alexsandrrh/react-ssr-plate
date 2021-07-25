@@ -32,5 +32,5 @@
     "webpack",
     "jest"
   ],
-  "types": ["typePatches", "node", "./src/declarations.d.ts"]
+  "types": ["typePatches", "node", "./types/index.d.ts"]
 }

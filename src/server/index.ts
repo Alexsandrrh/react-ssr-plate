@@ -1,27 +1,23 @@
-import http from 'http'
+import express from 'express'
 
-let app = require('./app.tsx').default
-
-let currentHandler = app.callback()
-const server = http.createServer(currentHandler)
-
-server.listen(process.env.PORT || 4000, () => {
-  console.log('Server app started...')
-})
+let app = require('./app').default
 
 if (module.hot) {
-  console.log('✅ Hot reload server app enabled!')
-
-  module.hot.accept('./app.tsx', () => {
-    console.log('🔁  HMR Reloading `./app.tsx`..')
-
+  module.hot.accept('./app', function () {
+    console.log('🔁  HMR Reloading `./app`...')
     try {
-      const newHandler = require('./app.tsx').default.callback()
-      server.removeListener('request', currentHandler)
-      server.on('request', newHandler)
-      currentHandler = newHandler
+      app = require('./app').default
     } catch (error) {
       console.error(error)
     }
   })
+  console.info('✅  Server-side HMR Enabled!')
 }
+
+const PORT = process.env.PORT ?? 4000
+
+export default express()
+  .use((req, res) => app.handle(req, res))
+  .listen(PORT, () => {
+    console.log(`> Started on port ${PORT}`)
+  })

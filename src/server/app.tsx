@@ -1,53 +1,38 @@
-import Koa, { Context } from 'koa'
-import Router from 'koa-router'
-import helmet from 'koa-helmet'
-import serve from 'koa-static'
-import path from 'path'
 import React from 'react'
-import { renderToString } from 'react-dom/server'
-import HTML from './HTML'
-import App from '../client/App'
-import { StaticRouter, StaticRouterContext } from 'react-router'
+import express, { Request, Response } from 'express'
 import createStore from '../client/store'
+import { renderToString } from 'react-dom/server'
 import { Provider } from 'react-redux'
+import { StaticRouter } from 'react-router'
+import Routes from '../client/pages'
+import HTML from './HTML'
 
-const router = new Router()
+const app = express()
 
-// SSR route
-router.get('/(.*)', (ctx: Context) => {
+// Checker of status app
+app.get('/status', (req: Request, res: Response) => res.status(200).send('OK'))
+
+// React app
+app.get('*', (req: Request, res: Response) => {
+  // Создаем State Manager
   const store = createStore()
+  const actions: any = []
 
-  Promise.all([]).finally(() => {
-    const context: StaticRouterContext = {}
+  Promise.all(actions).finally(() => {
+    // Создаем контекст для роутинга
+    const ctx = {}
+
+    // Рендерим в html
     const html = renderToString(
       <Provider store={store}>
-        <StaticRouter location={ctx.url} context={context}>
-          <HTML App={App} initialData={store.getState()} />
+        <StaticRouter location={req.url} context={ctx}>
+          <HTML App={Routes} initialData={store.getState()} />
         </StaticRouter>
       </Provider>
     )
 
-    // Редирект
-    if (context.url) {
-      return ctx.redirect(context.url)
-    }
-
-    ctx.type = 'html'
-    ctx.res.write('<!DOCTYPE html>')
-    ctx.body = html
+    res.status(200).send(html)
   })
 })
-
-const app = new Koa()
-
-app
-  .use(
-    helmet({
-      contentSecurityPolicy: false
-    })
-  )
-  .use(serve(process.env.PUBLIC_DIR ?? path.resolve('public')))
-  .use(router.routes())
-  .use(router.allowedMethods())
 
 export default app
