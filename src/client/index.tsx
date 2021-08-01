@@ -5,6 +5,7 @@ import createStore, { Store } from './store'
 import { Provider } from 'react-redux'
 import { BrowserRouter } from 'react-router-dom'
 import Routes from './pages'
+import './assets/styles/main.css'
 
 const initialData: Store = JSON.parse(
   document.getElementById('__INITIAL_DATA__')?.innerText ?? '{}'

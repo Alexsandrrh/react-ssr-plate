@@ -12,7 +12,6 @@ interface Props {
 
 // Loadable component
 const statsFile = path.resolve('dist', 'loadable-stats.json')
-const extractor = new ChunkExtractor({ statsFile, entrypoints: ['bundle'] })
 
 // Helmet
 const helmet = Helmet.renderStatic()
@@ -20,6 +19,7 @@ const htmlAttrs = helmet.htmlAttributes.toComponent()
 const bodyAttrs = helmet.bodyAttributes.toComponent()
 
 const HTML = ({ App, initialData }: Props) => {
+  const extractor = new ChunkExtractor({ statsFile, entrypoints: ['bundle'] })
   const jsx = extractor.collectChunks(<App />)
 
   return (
@@ -32,6 +32,7 @@ const HTML = ({ App, initialData }: Props) => {
           name="viewport"
           content="width=device-width, maximum-scale=1, initial-scale=1, user-scalable=0"
         />
+        <link rel="canonical" href="https://example.ru/" />
         {helmet.meta.toComponent()}
         {helmet.link.toComponent()}
         {extractor.getLinkElements()}

@@ -9,6 +9,10 @@ const LoadablePlugin = require('@loadable/webpack-plugin')
 const { RunScriptWebpackPlugin } = require('run-script-webpack-plugin')
 const errorOverlayMiddleware = require('react-dev-utils/errorOverlayMiddleware')
 const MiniCssExtractPlugin = require('mini-css-extract-plugin')
+const CssMinimizerPlugin = require('css-minimizer-webpack-plugin')
+const { BundleAnalyzerPlugin } = require('webpack-bundle-analyzer')
+const TerserPlugin = require('terser-webpack-plugin')
+const NodemonPlugin = require('nodemon-webpack-plugin')
 
 const paths = {
   buildDir: path.resolve('dist'),
@@ -53,11 +57,15 @@ async function createAsyncConfig(target, nodeEnv) {
     nodeEnv
   )
 
+  const localIdentName = isDev
+    ? '[name]__[local]__[hash:base64:6]'
+    : '[hash:base64:6]'
+
   const config = {
     mode: nodeEnv,
     name: target,
-    stats: 'errors-only',
     target: isServer ? 'node' : 'web',
+    devtool: isDev ? 'eval-cheap-source-map' : 'source-map',
     resolve: {
       extensions: ['.mjs', '.js', '.json', '.jsx', '.ts', '.tsx']
     },
@@ -111,6 +119,18 @@ async function createAsyncConfig(target, nodeEnv) {
       })
     ]
 
+    config.optimization = {
+      splitChunks: {
+        cacheGroups: {
+          vendor: {
+            test: /[\\/]node_modules[\\/]/,
+            name: 'vendor',
+            chunks: 'all'
+          }
+        }
+      }
+    }
+
     if (isDev) {
       // Output
       config.output = {
@@ -134,7 +154,6 @@ async function createAsyncConfig(target, nodeEnv) {
                   auto: true,
                   localIdentName: '[name]__[local]__[hash:base64:6]'
                 },
-                importLoaders: 1,
                 sourceMap: true
               }
             }
@@ -169,6 +188,9 @@ async function createAsyncConfig(target, nodeEnv) {
         ...config.plugins,
         new HotModuleReplacementPlugin({
           multiStep: true
+        }),
+        new BundleAnalyzerPlugin({
+          openAnalyzer: false
         })
       ]
     }
@@ -196,7 +218,6 @@ async function createAsyncConfig(target, nodeEnv) {
                   auto: true,
                   localIdentName: '[hash:base64:6]'
                 },
-                importLoaders: 1,
                 sourceMap: true
               }
             }
@@ -212,6 +233,51 @@ async function createAsyncConfig(target, nodeEnv) {
           chunkFilename: 'assets/css/[id].[contenthash].css'
         })
       ]
+
+      // Optimize
+      config.optimization = {
+        ...config.optimization,
+        minimize: true,
+        minimizer: [
+          new CssMinimizerPlugin(),
+          new TerserPlugin({
+            terserOptions: {
+              parse: {
+                // we want uglify-js to parse ecma 8 code. However, we don't want it
+                // to apply any minification steps that turns valid ecma 5 code
+                // into invalid ecma 5 code. This is why the 'compress' and 'output'
+                // sections only apply transformations that are ecma 5 safe
+                // https://github.com/facebook/create-react-app/pull/4234
+                ecma: 8
+              },
+              compress: {
+                ecma: 5,
+                warnings: false,
+                // Disabled because of an issue with Uglify breaking seemingly valid code:
+                // https://github.com/facebook/create-react-app/issues/2376
+                // Pending further investigation:
+                // https://github.com/mishoo/UglifyJS2/issues/2011
+                comparisons: false,
+                // Disabled because of an issue with Terser breaking valid code:
+                // https://github.com/facebook/create-react-app/issues/5250
+                // Pending futher investigation:
+                // https://github.com/terser-js/terser/issues/120
+                inline: 2
+              },
+              mangle: {
+                safari10: true
+              },
+              output: {
+                ecma: 5,
+                comments: false,
+                // Turned on because emoji and regex is not minified properly using default
+                // https://github.com/facebook/create-react-app/issues/2488
+                ascii_only: true
+              }
+            }
+          })
+        ]
+      }
     }
   }
 
@@ -229,31 +295,29 @@ async function createAsyncConfig(target, nodeEnv) {
       library: 'commonjs2'
     }
     config.externals = nodeExternals({
-      allowlist: [/\.(?!(?:jsx?|json)$).{1,5}$/i, 'webpack/hot/poll?300']
+      allowlist: [/\.(?!(?:jsx?|json)$).{1,5}$/i, 'webpack/hot/poll?1000']
     })
 
-    if (isProd) {
-      config.module.rules = [
-        ...config.module.rules,
-        {
-          test: /\.css$/,
-          exclude: /(node_modules|bower_components)/,
-          use: [
-            {
-              loader: 'css-loader',
-              options: {
-                modules: {
-                  auto: true,
-                  exportOnlyLocals: true,
-                  localIdentName: '[hash:base64:6]'
-                },
-                importLoaders: 1
+    config.module.rules = [
+      ...config.module.rules,
+      // CSS
+      {
+        test: /\.css$/,
+        exclude: /(node_modules|bower_components)/,
+        use: [
+          {
+            loader: 'css-loader',
+            options: {
+              modules: {
+                auto: true,
+                exportOnlyLocals: true,
+                localIdentName
               }
             }
-          ]
-        }
-      ]
-    }
+          }
+        ]
+      }
+    ]
 
     config.plugins.push(
       new CopyPlugin({
@@ -267,37 +331,12 @@ async function createAsyncConfig(target, nodeEnv) {
     )
 
     if (isDev) {
-      // Entry
-      config.entry = ['webpack/hot/poll?300', ...config.entry]
-
       config.watch = true
-
-      config.module.rules = [
-        ...config.module.rules,
-        {
-          test: /\.css$/,
-          exclude: /(node_modules|bower_components)/,
-          use: [
-            {
-              loader: 'css-loader',
-              options: {
-                modules: {
-                  auto: true,
-                  exportOnlyLocals: true,
-                  localIdentName: '[name]__[local]__[hash:base64:6]'
-                },
-                importLoaders: 1
-              }
-            }
-          ]
-        }
-      ]
+      // Entry
 
       config.plugins = [
         ...config.plugins,
-        new HotModuleReplacementPlugin(),
-        new RunScriptWebpackPlugin({
-          name: 'server.js',
+        new NodemonPlugin({
           nodeArgs: ['--inspect']
         })
       ]

@@ -1,13 +1,23 @@
 import React from 'react'
 import express, { Request, Response } from 'express'
+import helmet from 'helmet'
 import createStore from '../client/store'
-import { renderToString } from 'react-dom/server'
+import { renderToNodeStream } from 'react-dom/server'
 import { Provider } from 'react-redux'
 import { StaticRouter } from 'react-router'
 import Routes from '../client/pages'
 import HTML from './HTML'
+import path from 'path'
 
 const app = express()
+
+// Middlewares
+app
+  .use(helmet({ contentSecurityPolicy: false }))
+  .use(express.static(path.resolve('dist', 'public')))
+
+// Request logger
+app.use
 
 // Checker of status app
 app.get('/status', (req: Request, res: Response) => res.status(200).send('OK'))
@@ -22,8 +32,8 @@ app.get('*', (req: Request, res: Response) => {
     // Создаем контекст для роутинга
     const ctx = {}
 
-    // Рендерим в html
-    const html = renderToString(
+    // Рендерим
+    const stream = renderToNodeStream(
       <Provider store={store}>
         <StaticRouter location={req.url} context={ctx}>
           <HTML App={Routes} initialData={store.getState()} />
@@ -31,7 +41,8 @@ app.get('*', (req: Request, res: Response) => {
       </Provider>
     )
 
-    res.status(200).send(html)
+    res.type('html').status(200).write('<!DOCTYPE html>')
+    stream.pipe(res, { end: true })
   })
 })
 

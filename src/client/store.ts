@@ -2,8 +2,19 @@ import * as Redux from 'redux'
 import thunk from 'redux-thunk'
 import reducers from './reducers'
 
+let compose = Redux.compose
+
+// Для режима разработки на клиенте
+if (process.env.IS_DEV && process.env.IS_CLIENT === 'true') {
+  compose = window.__REDUX_DEVTOOLS_EXTENSION_COMPOSE__ ?? Redux.compose
+}
+
 const createStore = (initialState: any = {}) =>
-  Redux.createStore(reducers, initialState, Redux.applyMiddleware(thunk))
+  Redux.createStore(
+    reducers,
+    initialState,
+    compose(Redux.applyMiddleware(thunk))
+  )
 
 const rootStore = createStore()
 

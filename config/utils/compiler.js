@@ -3,15 +3,15 @@ const { webpack } = require('webpack')
 /**
  * @name compiler
  * @param {Object} config
+ * @return {Compiler}
  * */
 module.exports = (config) => {
-  let compiler
+  let compiler = null
   try {
-    compiler = webpack(config)
+    compiler = webpack(config, null)
   } catch (e) {
-    console.error(e)
+    console.log('COMPILER_ERROR', e)
     process.exit(1)
   }
-
   return compiler
 }

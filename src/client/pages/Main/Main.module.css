@@ -1,3 +1,4 @@
 .Main {
-  color: blue;
+	composes: Container from '../../assets/styles/main.module.css';
+  color: var(--blue-color);
 }

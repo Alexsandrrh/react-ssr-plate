@@ -5,8 +5,10 @@ const compiler = require('../config/utils/compiler')
 const deleteBuildDir = require('../config/utils/deleteBuildDir')
 
 const script = async () => {
+  const noop = () => {}
+
   // Clear console
-  console.log()
+  console.clear()
 
   // Remove last build dir
   await deleteBuildDir()
@@ -19,22 +21,20 @@ const script = async () => {
   process.env.DEV_HOST = 'localhost'
   process.env.PUBLIC_PATH = `http://${process.env.DEV_HOST}:${PORT}/`
 
-  // Configs
+  // Building client
   const clientConfig = await createWebpackConfig('client', 'development')
-  const serverConfig = await createWebpackConfig('server', 'development')
-
-  // Compilers
   const clientCompiler = compiler(clientConfig)
+
+  // Building server
+  const serverConfig = await createWebpackConfig('server', 'development')
   const serverCompiler = compiler(serverConfig)
 
-  // Initiate dev server
+  // Create Dev Server
   const devServer = new DevServer(clientCompiler, clientConfig.devServer)
 
-  devServer.listen(PORT, () => {
-    console.log('Starting dev server)')
-  })
+  devServer.listen(PORT, 'localhost', noop)
 
-  serverCompiler.watch({ stats: 'none' }, () => {})
+  serverCompiler.watch({ stats: 'errors-only' }, noop)
 }
 
 script()
